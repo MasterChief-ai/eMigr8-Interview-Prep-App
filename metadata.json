@@ -1,0 +1,6 @@
+{
+  "name": "eMigr8 Culture Fit Interview Prep",
+  "description": "Behavioral interview preparation platform for UK Skilled Worker visa applicants building verified STAR stories and practicing with a realistic UK Hiring Manager.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
