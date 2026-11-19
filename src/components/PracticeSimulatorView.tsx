@@ -18,6 +18,7 @@ import {
   StorySlot,
   UserProfile,
 } from "../types";
+import { postJson } from "../utils/api";
 
 interface PracticeSimulatorViewProps {
   profile: UserProfile | null;
@@ -111,23 +112,18 @@ export const PracticeSimulatorView: React.FC<PracticeSimulatorViewProps> = ({
       .map((s) => s.question);
 
     try {
-      const res = await fetch("/api/practice/question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          theme: {
-            name: targetTheme.name,
-            description: targetTheme.description,
-          },
-          previousQuestions,
-        }),
+      const data = await postJson<{
+        question: string;
+        interviewerContext: string;
+        whatUkPanelLooksFor: string;
+      }>("/api/practice/question", {
+        profile,
+        theme: {
+          name: targetTheme.name,
+          description: targetTheme.description,
+        },
+        previousQuestions,
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Could not generate interview question.");
-      }
 
       setCurrentQuestion({
         themeId: targetTheme.id,
@@ -153,24 +149,15 @@ export const PracticeSimulatorView: React.FC<PracticeSimulatorViewProps> = ({
     setEvalError("");
 
     try {
-      const res = await fetch("/api/practice/evaluate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          theme: {
-            name: currentQuestion.themeName,
-            description: activeTheme.description,
-          },
-          question: currentQuestion.question,
-          answer: answer.trim(),
-        }),
+      const data = await postJson<PracticeEvaluation>("/api/practice/evaluate", {
+        profile,
+        theme: {
+          name: currentQuestion.themeName,
+          description: activeTheme.description,
+        },
+        question: currentQuestion.question,
+        answer: answer.trim(),
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to evaluate response.");
-      }
 
       const evaluation: PracticeEvaluation = {
         starStructureScore: Number(data.starStructureScore) || 1,

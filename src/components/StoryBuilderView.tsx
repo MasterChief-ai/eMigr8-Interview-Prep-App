@@ -22,6 +22,7 @@ import {
   UserProfile,
 } from "../types";
 import { isDateOlderThanTwoYears, isValidProofUrl } from "../utils/storage";
+import { postJson } from "../utils/api";
 
 interface StoryBuilderViewProps {
   profile: UserProfile | null;
@@ -168,29 +169,20 @@ export const StoryBuilderView: React.FC<StoryBuilderViewProps> = ({
     setCoachError("");
 
     try {
-      const res = await fetch("/api/coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          theme: { name: theme.name, description: theme.description },
-          story: {
-            oneLineSummary: story.oneLineSummary,
-            dateOccurred: story.dateOccurred,
-            situation: story.situation,
-            task: story.task,
-            action: story.action,
-            result: story.result,
-            proofUrl: story.proofUrl,
-          },
-          messages: nextMessages.map((m) => ({ role: m.role, text: m.text })),
-        }),
+      const data = await postJson<{ reply: string }>("/api/coach", {
+        profile,
+        theme: { name: theme.name, description: theme.description },
+        story: {
+          oneLineSummary: story.oneLineSummary,
+          dateOccurred: story.dateOccurred,
+          situation: story.situation,
+          task: story.task,
+          action: story.action,
+          result: story.result,
+          proofUrl: story.proofUrl,
+        },
+        messages: nextMessages.map((m) => ({ role: m.role, text: m.text })),
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Unable to reach AI Extraction Coach.");
-      }
 
       const assistantMsg: CoachMessage = {
         id: `msg-${Date.now()}-a`,
@@ -231,28 +223,26 @@ export const StoryBuilderView: React.FC<StoryBuilderViewProps> = ({
     setCheckError("");
 
     try {
-      const res = await fetch("/api/readiness-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          theme: { name: theme.name, description: theme.description },
-          story: {
-            oneLineSummary: story.oneLineSummary,
-            dateOccurred: story.dateOccurred,
-            situation: story.situation,
-            task: story.task,
-            action: story.action,
-            result: story.result,
-            proofUrl: story.proofUrl,
-          },
-        }),
+      const data = await postJson<{
+        hasSpecificResult: boolean;
+        clearPersonalOwnership: boolean;
+        isRecent: boolean;
+        jargonExplained: boolean;
+        fixPrompts?: ReadinessEvaluation["fixPrompts"];
+        overallVerdict?: string;
+      }>("/api/readiness-check", {
+        profile,
+        theme: { name: theme.name, description: theme.description },
+        story: {
+          oneLineSummary: story.oneLineSummary,
+          dateOccurred: story.dateOccurred,
+          situation: story.situation,
+          task: story.task,
+          action: story.action,
+          result: story.result,
+          proofUrl: story.proofUrl,
+        },
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Readiness check failed.");
-      }
 
       const evaluation: ReadinessEvaluation = {
         checkedAt: new Date().toISOString(),

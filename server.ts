@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import express from "express";
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -476,6 +476,21 @@ Evaluate this response honestly and constructively.`;
     } catch (error) {
       sendRouteError(res, "/api/practice/evaluate", error, "Failed to evaluate practice response.");
     }
+  });
+
+  // Never let /api/* requests fall through to Vite or static HTML SPA fallback
+  app.all("/api/*", (_req: Request, res: Response) => {
+    res.status(404).json({ error: "API route not found." });
+  });
+
+  // Return JSON instead of Express default HTML error page on API middleware errors (e.g. malformed JSON)
+  app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith("/api/")) {
+      const message = err instanceof Error ? err.message : "Invalid API request.";
+      res.status(400).json({ error: message });
+      return;
+    }
+    next(err);
   });
 
   // Vite middleware in development; static dist/ in production
